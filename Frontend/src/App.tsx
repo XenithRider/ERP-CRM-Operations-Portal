@@ -11,7 +11,7 @@ import { Invoices } from "@/pages/Invoices";
 import { Reports } from "@/pages/Reports";
 import { Settings } from "@/pages/Settings";
 import { Login } from "@/pages/Login";
-import { NotFound } from "./pages/NotFound";
+import { NotFound } from "@/pages/NotFound";
 
 export default function App() {
   return (
