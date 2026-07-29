@@ -2,6 +2,8 @@
 
 A full-stack, production-ready ERP and CRM application designed for modern operations management. This portal provides seamless control over inventory, stock movements, customer relationships (leads and accounts), and order fulfillment through automated PDF challan generation.
 
+**Live Demo:** [https://erp-crm-operations-portal-15ei05new-xenithriders-projects.vercel.app](https://erp-crm-operations-portal-15ei05new-xenithriders-projects.vercel.app)
+
 ##  Features
 
 - **Modern Glassmorphism UI:** A premium, fully responsive React interface with interactive components and dark-mode styling.
