@@ -43,6 +43,31 @@ function toNonNegativeNumber(value, fieldName) {
   return parsed;
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Accepts an optional leading + followed by 7-15 digits, covering both
+// domestic (e.g. 10-digit Indian) and international mobile numbers.
+const MOBILE_REGEX = /^\+?[0-9]{7,15}$/;
+
+/**
+ * Validates an email format. Optional fields should only call this when a
+ * value is actually present (skip the call for empty/undefined values).
+ */
+function requireValidEmail(value, fieldName) {
+  if (!EMAIL_REGEX.test(value)) {
+    throw new ApiError(400, `${fieldName} must be a valid email address`);
+  }
+}
+
+/**
+ * Validates a mobile number format (digits only, optional leading '+',
+ * 7-15 digits total).
+ */
+function requireValidMobile(value, fieldName) {
+  if (!MOBILE_REGEX.test(value)) {
+    throw new ApiError(400, `${fieldName} must be a valid mobile number`);
+  }
+}
+
 /**
  * Parses pagination query params into safe, bounded values.
  * Enforces a maximum page size so clients cannot request unbounded result sets.
@@ -84,6 +109,8 @@ function toOptionalDate(value, fieldName) {
 module.exports = {
   requireField,
   requireEnum,
+  requireValidEmail,
+  requireValidMobile,
   toPositiveInt,
   toNonNegativeNumber,
   parsePagination,
