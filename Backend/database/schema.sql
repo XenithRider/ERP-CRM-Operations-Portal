@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS customers (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(150) NOT NULL,
-  mobile VARCHAR(20) NOT NULL,
+  mobile VARCHAR(20) NOT NULL UNIQUE,
   email VARCHAR(150) NULL,
   business_name VARCHAR(150) NULL,
   gst_number VARCHAR(30) NULL,
@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS customers (
   CONSTRAINT fk_customers_created_by FOREIGN KEY (created_by)
     REFERENCES users (id) ON DELETE SET NULL,
   INDEX idx_customers_name (name),
-  INDEX idx_customers_mobile (mobile),
   INDEX idx_customers_status (status)
 ) ENGINE=InnoDB;
 
@@ -76,6 +75,7 @@ CREATE TABLE IF NOT EXISTS products (
   current_stock INT NOT NULL DEFAULT 0,
   minimum_stock INT NOT NULL DEFAULT 0,
   warehouse_location VARCHAR(100) NULL,
+  image_url VARCHAR(500) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     ON UPDATE CURRENT_TIMESTAMP,
@@ -136,6 +136,7 @@ CREATE TABLE IF NOT EXISTS challan_items (
   product_id INT NOT NULL,
   product_name_snapshot VARCHAR(150) NOT NULL,
   sku_snapshot VARCHAR(60) NOT NULL,
+  category_snapshot VARCHAR(100) NULL,
   unit_price_snapshot DECIMAL(12, 2) NOT NULL,
   quantity INT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
