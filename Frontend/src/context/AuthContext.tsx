@@ -27,7 +27,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(email: string, password: string) {
     const { token, user } = await authService.login(email, password);
     localStorage.setItem("ops_portal_token", token);
-    setUser(user);
+    const initials = user.name
+      ? user.name.split(" ").map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+      : "?";
+    setUser({ ...user, avatarInitials: initials });
   }
 
   function logout() {

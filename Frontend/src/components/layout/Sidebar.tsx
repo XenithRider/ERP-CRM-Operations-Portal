@@ -1,20 +1,12 @@
 import { NavLink } from "react-router-dom";
 import {
-  LayoutGrid,
-  Users2,
-  Building2,
-  ShoppingCart,
-  Boxes,
-  Receipt,
-  BarChart3,
-  Settings,
-  Layers,
+  LayoutGrid, Users2, Building2, ShoppingCart, Boxes, Receipt, BarChart3, Settings, Layers,
 } from "lucide-react";
 import { cx } from "@/lib/format";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutGrid, end: true },
-  { to: "/leads", label: "Leads & Pipeline", icon: Users2 },
+  { to: "/leads", label: "Leads", icon: Users2 },
   { to: "/accounts", label: "Accounts", icon: Building2 },
   { to: "/orders", label: "Orders", icon: ShoppingCart },
   { to: "/inventory", label: "Inventory", icon: Boxes },
@@ -24,20 +16,42 @@ const NAV_ITEMS = [
 
 export function Sidebar() {
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] md:flex">
-      <div className="flex items-center gap-2 border-b border-[var(--color-border)] px-5 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--color-ledger-500)] text-white">
-          <Layers className="h-4.5 w-4.5" />
+    <aside
+      className="hidden w-60 shrink-0 flex-col md:flex"
+      style={{
+        background: "var(--color-surface)",
+        borderRight: "1px solid var(--color-border)",
+      }}
+    >
+      {/* Logo */}
+      <div
+        className="flex items-center gap-3 px-5 py-5"
+        style={{ borderBottom: "1px solid var(--color-border)" }}
+      >
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{
+            background: "linear-gradient(135deg, #6366f1, #4338ca)",
+            boxShadow: "0 4px 12px rgba(99,102,241,0.4)",
+          }}
+        >
+          <Layers className="h-4.5 w-4.5 text-white" />
         </div>
         <div className="leading-tight">
-          <p className="font-[var(--font-display)] text-sm font-semibold tracking-tight text-[var(--color-ink)]">
+          <p
+            className="font-[var(--font-display)] text-sm font-bold tracking-tight"
+            style={{ color: "var(--color-ink)" }}
+          >
             Ops Portal
           </p>
-          <p className="text-[11px] text-[var(--color-ink-faint)]">ERP · CRM</p>
+          <p className="text-[11px]" style={{ color: "var(--color-ink-faint)" }}>
+            ERP · CRM
+          </p>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+      {/* Nav Items */}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -45,11 +59,23 @@ export function Sidebar() {
             end={end}
             className={({ isActive }) =>
               cx(
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
                 isActive
-                  ? "bg-[var(--color-ledger-50)] text-[var(--color-ledger-700)]"
-                  : "text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)]"
+                  ? "text-white"
+                  : "hover:text-[var(--color-ink)]"
               )
+            }
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(67,56,202,0.15))",
+                    color: "var(--color-accent-400)",
+                    borderLeft: "2px solid var(--color-accent-500)",
+                  }
+                : {
+                    color: "var(--color-ink-muted)",
+                    borderLeft: "2px solid transparent",
+                  }
             }
           >
             <Icon className="h-4 w-4" />
@@ -58,16 +84,24 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-[var(--color-border)] px-3 py-4">
+      {/* Settings */}
+      <div className="px-3 py-4" style={{ borderTop: "1px solid var(--color-border)" }}>
         <NavLink
           to="/settings"
           className={({ isActive }) =>
             cx(
-              "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-              isActive
-                ? "bg-[var(--color-ledger-50)] text-[var(--color-ledger-700)]"
-                : "text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)]"
+              "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+              isActive ? "" : ""
             )
+          }
+          style={({ isActive }) =>
+            isActive
+              ? {
+                  background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(67,56,202,0.15))",
+                  color: "var(--color-accent-400)",
+                  borderLeft: "2px solid var(--color-accent-500)",
+                }
+              : { color: "var(--color-ink-muted)", borderLeft: "2px solid transparent" }
           }
         >
           <Settings className="h-4 w-4" />

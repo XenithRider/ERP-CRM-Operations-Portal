@@ -1,77 +1,135 @@
 import { useEffect, useState } from "react";
-import { Card, CardBody, CardHeader, CardTitle } from "@/components/ui/Card";
-import { RevenueTrendChart } from "@/components/charts/RevenueTrendChart";
-import { PipelineChart } from "@/components/charts/PipelineChart";
-import { dashboardService } from "@/services/dashboardService";
-import { ordersService } from "@/services/ordersService";
-import type { DashboardMetrics, Order } from "@/types";
-import { formatCurrency } from "@/lib/format";
+import { challansService } from "@/services/challansService";
+import { customersService } from "@/services/customersService";
+import { productsService } from "@/services/productsService";
+import type { Challan, Customer, Product } from "@/types";
+import { formatDate } from "@/lib/format";
 
 export function Reports() {
-  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [challans, setChallans] = useState<Challan[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dashboardService.getMetrics().then(setMetrics);
-    ordersService.list().then(setOrders);
+    Promise.all([
+      challansService.list(),
+      customersService.list(),
+      productsService.list(),
+    ])
+      .then(([c, cu, p]) => {
+        setChallans(c);
+        setCustomers(cu);
+        setProducts(p);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  if (!metrics) return null;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-7 w-36 shimmer rounded-lg" />
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-28 shimmer rounded-2xl" />)}
+        </div>
+      </div>
+    );
+  }
 
-  const byStatus = orders.reduce<Record<string, number>>((acc, o) => {
-    acc[o.status] = (acc[o.status] ?? 0) + 1;
-    return acc;
-  }, {});
+  const totalLeads = customers.filter((c) => c.status === "LEAD").length;
+  const totalAccounts = customers.filter((c) => c.status === "ACTIVE").length;
+  const totalDraft = challans.filter((c) => c.status === "DRAFT").length;
+  const totalConfirmed = challans.filter((c) => c.status === "CONFIRMED").length;
+  const totalCancelled = challans.filter((c) => c.status === "CANCELLED").length;
+  const lowStock = products.filter((p) => p.current_stock <= p.minimum_stock).length;
+
+  const summaryCards = [
+    { label: "Total Customers", value: customers.length, color: "var(--color-accent-500)" },
+    { label: "Leads", value: totalLeads, color: "var(--color-warning-500)" },
+    { label: "Active Accounts", value: totalAccounts, color: "var(--color-success-500)" },
+    { label: "Draft Orders", value: totalDraft, color: "var(--color-accent-400)" },
+    { label: "Confirmed Orders", value: totalConfirmed, color: "var(--color-success-500)" },
+    { label: "Cancelled Orders", value: totalCancelled, color: "var(--color-danger-500)" },
+    { label: "Total Products", value: products.length, color: "var(--color-accent-500)" },
+    { label: "Low Stock Items", value: lowStock, color: "var(--color-danger-500)" },
+  ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6 fade-in">
       <div>
-        <h1 className="font-[var(--font-display)] text-xl font-semibold tracking-tight text-[var(--color-ink)]">Reports</h1>
-        <p className="mt-1 text-sm text-[var(--color-ink-muted)]">Revenue, pipeline, and fulfillment summaries.</p>
+        <h1 className="font-[var(--font-display)] text-2xl font-bold tracking-tight" style={{ color: "var(--color-ink)" }}>
+          Reports
+        </h1>
+        <p className="mt-1 text-sm" style={{ color: "var(--color-ink-muted)" }}>
+          Summary of operations across CRM and ERP.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card>
-          <CardHeader><CardTitle>Revenue vs target — last 6 months</CardTitle></CardHeader>
-          <CardBody><RevenueTrendChart data={metrics.revenueTrend} /></CardBody>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle>Pipeline value by stage</CardTitle></CardHeader>
-          <CardBody><PipelineChart data={metrics.pipelineByStage} /></CardBody>
-        </Card>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {summaryCards.map((s) => (
+          <div
+            key={s.label}
+            className="glass rounded-2xl inner-border p-5"
+            style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--color-ink-muted)" }}>
+              {s.label}
+            </p>
+            <p className="mt-2 text-3xl font-bold font-[var(--font-display)]" style={{ color: s.color }}>
+              {s.value}
+            </p>
+          </div>
+        ))}
       </div>
 
-      <Card>
-        <CardHeader><CardTitle>Orders by fulfillment status</CardTitle></CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {Object.entries(byStatus).map(([status, count]) => (
-              <div key={status} className="rounded-md border border-[var(--color-border)] p-3 text-center">
-                <p className="num text-xl font-semibold text-[var(--color-ink)]">{count}</p>
-                <p className="mt-1 text-xs capitalize text-[var(--color-ink-muted)]">{status}</p>
-              </div>
+      {/* Recent Challans Table */}
+      <div className="glass rounded-2xl inner-border overflow-hidden" style={{ boxShadow: "0 4px 24px rgba(0,0,0,0.3)" }}>
+        <div className="border-b px-6 py-4" style={{ borderColor: "var(--color-border)" }}>
+          <h2 className="text-sm font-semibold" style={{ color: "var(--color-ink)" }}>All Challans</h2>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+              {["Challan #", "Customer", "Qty", "Status", "Created"].map((h) => (
+                <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--color-ink-muted)" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {challans.map((c) => (
+              <tr
+                key={c.id}
+                style={{ borderBottom: "1px solid var(--color-border)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-glass)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                <td className="px-5 py-3.5">
+                  <span className="num font-semibold" style={{ color: "var(--color-accent-400)" }}>{c.challan_number}</span>
+                </td>
+                <td className="px-5 py-3.5" style={{ color: "var(--color-ink)" }}>{c.customer_name}</td>
+                <td className="px-5 py-3.5">
+                  <span className="num" style={{ color: "var(--color-ink-muted)" }}>{c.total_quantity}</span>
+                </td>
+                <td className="px-5 py-3.5">
+                  <span
+                    className="badge"
+                    style={{
+                      background: c.status === "CONFIRMED" ? "var(--color-success-100)" : c.status === "CANCELLED" ? "var(--color-danger-100)" : "var(--color-warning-100)",
+                      color: c.status === "CONFIRMED" ? "var(--color-success-500)" : c.status === "CANCELLED" ? "var(--color-danger-500)" : "var(--color-warning-500)",
+                    }}
+                  >
+                    {c.status}
+                  </span>
+                </td>
+                <td className="px-5 py-3.5">
+                  <span className="num text-xs" style={{ color: "var(--color-ink-faint)" }}>{formatDate(c.created_at)}</span>
+                </td>
+              </tr>
             ))}
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Totals</CardTitle></CardHeader>
-        <CardBody className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Total pipeline</p>
-            <p className="num mt-1 text-lg font-semibold">{formatCurrency(metrics.pipelineValue)}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Order value (open)</p>
-            <p className="num mt-1 text-lg font-semibold">{formatCurrency(orders.reduce((s, o) => s + o.total, 0))}</p>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-[var(--color-ink-muted)]">Revenue (month)</p>
-            <p className="num mt-1 text-lg font-semibold">{formatCurrency(metrics.monthRevenue)}</p>
-          </div>
-        </CardBody>
-      </Card>
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

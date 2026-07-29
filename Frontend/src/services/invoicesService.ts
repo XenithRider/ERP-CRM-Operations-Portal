@@ -1,11 +1,4 @@
-import { apiClient, withMockFallback } from "./apiClient";
-import { mockInvoices } from "@/data/mockData";
-import type { Invoice } from "@/types";
-
+// Legacy service stubs — functionality migrated to challansService.ts
 export const invoicesService = {
-  list: () =>
-    withMockFallback(
-      () => apiClient.get<Invoice[]>("/invoices"),
-      () => mockInvoices
-    ),
+  list: () => Promise.resolve([]),
 };

@@ -1,130 +1,175 @@
 // ---- Shared/domain types for the ERP-CRM Operations Portal ----
-// These mirror typical ERP/CRM REST resources. Field names use camelCase
-// on the frontend; services/*.ts is the single place that maps the real
-// backend response shape (e.g. Spring Boot / SAP-integrated snake_case)
-// into these types, so only that layer needs to change once the actual
-// API contract from the backend repo is available.
+// These mirror the backend REST API response shapes from the backend repo.
 
-export type ID = string;
+export type ID = string | number;
 
-export type Status = "active" | "pending" | "at_risk" | "inactive" | "closed";
-
+// ---- Auth ----
 export interface User {
   id: ID;
   name: string;
   email: string;
-  role: "admin" | "manager" | "sales" | "ops" | "viewer";
-  avatarInitials: string;
+  role: "ADMIN" | "SALES" | "WAREHOUSE" | "ACCOUNTS" | string;
+  avatarInitials?: string;
 }
 
-export interface Account {
+// ---- Customer (Leads & Accounts) ----
+export type CustomerStatus = "LEAD" | "ACTIVE" | "INACTIVE";
+export type CustomerType = "RETAIL" | "WHOLESALE" | "DISTRIBUTOR";
+
+export interface Customer {
   id: ID;
   name: string;
-  industry: string;
-  owner: string;
-  status: Status;
-  annualRevenue: number;
-  openDeals: number;
-  city: string;
-  country: string;
-  createdAt: string;
+  mobile: string;
+  email?: string | null;
+  business_name?: string | null;
+  gst_number?: string | null;
+  customer_type: CustomerType;
+  address?: string | null;
+  status: CustomerStatus;
+  follow_up_date?: string | null;
+  notes?: string | null;
+  created_by?: ID | null;
+  created_at: string;
+  updated_at: string;
+  followUps?: FollowUp[];
 }
 
-export type LeadStage =
-  | "new"
-  | "contacted"
-  | "qualified"
-  | "proposal"
-  | "won"
-  | "lost";
-
-export interface Lead {
+export interface FollowUp {
   id: ID;
-  company: string;
-  contact: string;
-  email: string;
-  stage: LeadStage;
-  value: number;
-  owner: string;
-  source: string;
-  updatedAt: string;
+  customer_id?: ID;
+  note: string;
+  follow_up_date?: string | null;
+  created_by?: ID | null;
+  created_at: string;
 }
 
-export type OrderStatus =
-  | "draft"
-  | "confirmed"
-  | "processing"
-  | "shipped"
-  | "delivered"
-  | "cancelled";
-
-export interface OrderLine {
-  id: ID;
-  sku: string;
-  description: string;
-  qty: number;
-  unitPrice: number;
-}
-
-export interface Order {
-  id: ID;
-  orderNumber: string;
-  account: string;
-  status: OrderStatus;
-  total: number;
-  currency: string;
-  createdAt: string;
-  eta: string;
-  lines: OrderLine[];
-}
-
-export interface InventoryItem {
-  id: ID;
-  sku: string;
+export interface CreateCustomerPayload {
   name: string;
-  category: string;
-  warehouse: string;
-  onHand: number;
-  reserved: number;
-  reorderPoint: number;
-  unitCost: number;
+  mobile: string;
+  email?: string;
+  businessName?: string;
+  gstNumber?: string;
+  customerType?: CustomerType;
+  address?: string;
+  status?: CustomerStatus;
+  followUpDate?: string;
+  notes?: string;
 }
 
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "void";
-
-export interface Invoice {
+// ---- Product ----
+export interface Product {
   id: ID;
-  invoiceNumber: string;
-  account: string;
-  status: InvoiceStatus;
-  amount: number;
-  currency: string;
-  issuedAt: string;
-  dueAt: string;
+  name: string;
+  sku: string;
+  category?: string | null;
+  unit_price: number;
+  current_stock: number;
+  minimum_stock: number;
+  warehouse_location?: string | null;
+  image_url?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface DashboardMetrics {
-  pipelineValue: number;
-  pipelineDelta: number;
-  openOrders: number;
-  openOrdersDelta: number;
-  monthRevenue: number;
-  monthRevenueDelta: number;
-  lowStockItems: number;
-  lowStockDelta: number;
-  revenueTrend: { month: string; revenue: number; target: number }[];
-  pipelineByStage: { stage: string; value: number }[];
-  recentActivity: {
-    id: ID;
-    type: "lead" | "order" | "invoice" | "account";
-    message: string;
-    time: string;
-  }[];
+export interface CreateProductPayload {
+  name: string;
+  sku: string;
+  category?: string;
+  unit_price: number;
+  current_stock?: number;
+  minimum_stock?: number;
+  warehouse_location?: string;
 }
 
-export interface Paginated<T> {
+// ---- Inventory / Stock Movements ----
+export type MovementType = "IN" | "OUT";
+
+export interface StockMovement {
+  id: ID;
+  product_id: ID;
+  quantity: number;
+  movement_type: MovementType;
+  reason?: string | null;
+  reference_type?: string | null;
+  reference_id?: ID | null;
+  created_by?: ID | null;
+  created_at: string;
+  product_name?: string;
+  product_sku?: string;
+}
+
+export interface CreateMovementPayload {
+  productId: ID;
+  quantity: number;
+  movementType: MovementType;
+  reason?: string;
+}
+
+// ---- Challans (Orders & Invoices) ----
+export type ChallanStatus = "DRAFT" | "CONFIRMED" | "CANCELLED";
+
+export interface ChallanItem {
+  id: ID;
+  challan_id: ID;
+  product_id: ID;
+  product_name_snapshot: string;
+  sku_snapshot: string;
+  category_snapshot?: string | null;
+  unit_price_snapshot: number;
+  quantity: number;
+}
+
+export interface Challan {
+  id: ID;
+  challan_number: string;
+  customer_id: ID;
+  customer_name: string;
+  customer_mobile: string;
+  total_quantity: number;
+  status: ChallanStatus;
+  created_by?: ID | null;
+  created_at: string;
+  updated_at: string;
+  items?: ChallanItem[];
+}
+
+export interface CreateChallanPayload {
+  customerId: ID;
+  items: { productId: ID; quantity: number }[];
+}
+
+// ---- Pagination ----
+export interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// ---- API Response Wrapper ----
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// ---- Dashboard ----
+export interface DashboardMetrics {
+  totalLeads: number;
+  totalAccounts: number;
+  totalDraftChallans: number;
+  totalConfirmedChallans: number;
+  lowStockProducts: number;
+  totalProducts: number;
+  recentChallans: Challan[];
+  recentCustomers: Customer[];
 }

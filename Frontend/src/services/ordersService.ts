@@ -1,16 +1,5 @@
-import { apiClient, withMockFallback } from "./apiClient";
-import { mockOrders } from "@/data/mockData";
-import type { Order } from "@/types";
-
+// Legacy service stubs — functionality migrated to challansService.ts
 export const ordersService = {
-  list: () =>
-    withMockFallback(
-      () => apiClient.get<Order[]>("/orders"),
-      () => mockOrders
-    ),
-  getById: (id: string) =>
-    withMockFallback(
-      () => apiClient.get<Order>(`/orders/${id}`),
-      () => mockOrders.find((o) => o.id === id)
-    ),
+  list: () => Promise.resolve([]),
+  getById: (_id: string) => Promise.resolve(null),
 };

@@ -1,21 +1,6 @@
-import { apiClient, withMockFallback } from "./apiClient";
-import { mockAccounts } from "@/data/mockData";
-import type { Account } from "@/types";
-
+// Legacy service stubs — functionality migrated to customersService.ts
 export const accountsService = {
-  list: () =>
-    withMockFallback(
-      () => apiClient.get<Account[]>("/accounts"),
-      () => mockAccounts
-    ),
-  getById: (id: string) =>
-    withMockFallback(
-      () => apiClient.get<Account>(`/accounts/${id}`),
-      () => mockAccounts.find((a) => a.id === id)
-    ),
-  create: (payload: Partial<Account>) =>
-    withMockFallback(
-      () => apiClient.post<Account>("/accounts", payload),
-      () => ({ ...payload, id: `acc-${Date.now()}` } as Account)
-    ),
+  list: () => Promise.resolve([]),
+  getById: (_id: string) => Promise.resolve(null),
+  create: (_payload: unknown) => Promise.resolve(null),
 };

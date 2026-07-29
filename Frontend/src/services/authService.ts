@@ -1,29 +1,24 @@
-import { apiClient, withMockFallback } from "./apiClient";
+import { apiClient } from "./apiClient";
 import type { User } from "@/types";
 
-const DEMO_USER: User = {
-  id: "usr-1",
-  name: "Sumit Kulkarni",
-  email: "sumit.kulkarni@opsportal.com",
-  role: "manager",
-  avatarInitials: "SK",
-};
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
 
 export const authService = {
-  login: (email: string, _password: string) =>
-    withMockFallback(
-      () =>
-        apiClient.post<{ token: string; user: User }>("/auth/login", {
-          email,
-          password: _password,
-        }),
-      () => ({ token: "mock-token", user: { ...DEMO_USER, email } })
-    ),
-  me: () =>
-    withMockFallback(
-      () => apiClient.get<User>("/auth/me"),
-      () => DEMO_USER
-    ),
+  login: async (email: string, _password: string) => {
+    const res = await apiClient.post<ApiResponse<{ token: string; user: User }>>("/auth/login", {
+      email,
+      password: _password,
+    });
+    return res.data;
+  },
+  me: async () => {
+    const res = await apiClient.get<ApiResponse<User>>("/auth/me");
+    return res.data;
+  },
   logout: () => {
     localStorage.removeItem("ops_portal_token");
   },
