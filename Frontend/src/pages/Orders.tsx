@@ -5,6 +5,7 @@ import { customersService } from "@/services/customersService";
 import { productsService } from "@/services/productsService";
 import type { Challan, CreateChallanPayload, Customer, Product } from "@/types";
 import { formatDate } from "@/lib/format";
+import { API_BASE_URL } from "@/services/apiClient";
 
 function StatusBadge({ status }: { status: string }) {
   const cfg: Record<string, { bg: string; color: string }> = {
@@ -265,7 +266,7 @@ export function Orders() {
     try {
       const token = localStorage.getItem("ops_portal_token");
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/challans/${c.id}/invoice`,
+        `${API_BASE_URL}/challans/${c.id}/invoice`,
         { headers: token ? { Authorization: `Bearer ${token}` } : {} }
       );
       if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));

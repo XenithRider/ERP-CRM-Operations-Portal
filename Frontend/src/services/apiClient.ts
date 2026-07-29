@@ -7,10 +7,10 @@
 // is fully functional out of the box.
 
 export const API_BASE_URL: string =
-  import.meta.env.VITE_API_BASE_URL ?? "/api";
+  import.meta.env.VITE_API_BASE_URL ?? "https://erp-crm-operations-portal-nghh.onrender.com/api";
 
 export const USE_MOCK: boolean =
-  (import.meta.env.VITE_USE_MOCK ?? "true") === "true";
+  (import.meta.env.VITE_USE_MOCK ?? "false") === "true";
 
 class ApiError extends Error {
   status: number;
