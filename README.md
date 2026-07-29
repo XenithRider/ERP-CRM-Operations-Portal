@@ -1,4 +1,4 @@
-# Mini ERP + CRM Operations Portal
+# ERP + CRM Operations Portal
 
 A full-stack, production-ready ERP and CRM application designed for modern operations management. This portal provides seamless control over inventory, stock movements, customer relationships (leads and accounts), and order fulfillment through automated PDF challan generation.
 
