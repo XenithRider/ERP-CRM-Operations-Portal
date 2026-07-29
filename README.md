@@ -5,7 +5,7 @@ A full-stack, production-ready ERP and CRM application designed for modern opera
 **Live Frontend Demo:** [https://erp-crm-operations-portal-15ei05new-xenithriders-projects.vercel.app](https://erp-crm-operations-portal-15ei05new-xenithriders-projects.vercel.app)
 **Live Backend API:** [https://erp-crm-operations-portal-nghh.onrender.com](https://erp-crm-operations-portal-nghh.onrender.com)
 
-## 🚀 Features
+## Features
 
 - **Modern Glassmorphism UI:** A premium, fully responsive React interface with interactive components and dark-mode styling.
 - **Customer CRM:** Manage leads and active accounts, track follow-up dates, and maintain interaction histories.
@@ -14,7 +14,7 @@ A full-stack, production-ready ERP and CRM application designed for modern opera
 - **AWS S3 Image Support:** Attach cloud-hosted images to inventory products.
 - **Role-Based Access Control:** Secure JWT authentication with distinct permission levels (Admin, Sales, Warehouse, Accounts).
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - **Frontend:** React (TypeScript), Vite, Tailwind CSS, Lucide React (Icons).
 - **Backend:** Node.js, Express, JSON Web Tokens (JWT), PDFKit.
@@ -27,7 +27,7 @@ A full-stack, production-ready ERP and CRM application designed for modern opera
 
 ---
 
-## 📂 Project Structure
+##  Project Structure
 
 This is a monorepo containing both the frontend and backend environments:
 
@@ -44,7 +44,7 @@ FundsRoom-Assignment/
 
 ---
 
-## 💻 Local Setup Instructions
+##  Local Setup Instructions
 
 ### Prerequisites
 - Node.js (v18+)
@@ -119,7 +119,7 @@ FundsRoom-Assignment/
 
 ---
 
-## 🔑 Default Login Credentials
+##  Default Login Credentials
 
 If you ran the provided `database/seed.sql` file, the following demo accounts are available to test the role-based functionality:
 
@@ -132,7 +132,7 @@ If you ran the provided `database/seed.sql` file, the following demo accounts ar
 
 ---
 
-## ☁️ Cloud Deployment Configuration
+##  Cloud Deployment Configuration
 
 This project is configured to be easily deployed to modern cloud platforms:
 
