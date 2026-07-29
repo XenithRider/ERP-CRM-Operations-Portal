@@ -92,10 +92,7 @@ export async function withMockFallback<T>(
   live: () => Promise<T>,
   mock: () => T | Promise<T>
 ): Promise<T> {
-  if (USE_MOCK) return mock();
-  try {
-    return await live();
-  } catch {
-    return mock();
-  }
+  // Mock mode is permanently turned off as requested.
+  // We strictly call the live backend and let errors propagate naturally.
+  return await live();
 }
