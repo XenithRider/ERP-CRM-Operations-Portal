@@ -1,4 +1,5 @@
 const ApiError = require('../utils/api-error');
+const multer = require('multer');
 
 /**
  * Handles requests to routes that do not exist.
@@ -15,6 +16,12 @@ function notFoundHandler(req, res, next) {
  */
 // eslint-disable-next-line no-unused-vars
 function errorHandler(err, req, res, next) {
+  // Multer (file upload) errors are not ApiError instances but carry a
+  // useful, safe-to-show message (e.g. "File too large").
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ success: false, message: err.message });
+  }
+
   const isApiError = err instanceof ApiError;
   const statusCode = isApiError ? err.statusCode : 500;
   const message = isApiError ? err.message : 'Internal server error';
@@ -28,6 +35,10 @@ function errorHandler(err, req, res, next) {
     success: false,
     message
   };
+
+  if (isApiError && err.errors) {
+    response.errors = err.errors;
+  }
 
   if (isApiError && err.details) {
     response.details = err.details;
