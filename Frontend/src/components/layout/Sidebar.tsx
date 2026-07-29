@@ -1,8 +1,9 @@
 import { NavLink } from "react-router-dom";
 import {
-  LayoutGrid, Users2, Building2, ShoppingCart, Boxes, Receipt, BarChart3, Settings, Layers,
+  LayoutGrid, Users2, Building2, ShoppingCart, Boxes, Receipt, BarChart3, Settings, Layers, UserCog
 } from "lucide-react";
 import { cx } from "@/lib/format";
+import { useAuth } from "@/context/AuthContext";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutGrid, end: true },
@@ -15,6 +16,8 @@ const NAV_ITEMS = [
 ];
 
 export function Sidebar() {
+  const { user } = useAuth();
+  
   return (
     <aside
       className="hidden w-60 shrink-0 flex-col md:flex"
@@ -82,6 +85,34 @@ export function Sidebar() {
             {label}
           </NavLink>
         ))}
+        {user?.role === "ADMIN" && (
+          <NavLink
+            to="/employees"
+            className={({ isActive }) =>
+              cx(
+                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all",
+                isActive
+                  ? "text-white"
+                  : "hover:text-[var(--color-ink)]"
+              )
+            }
+            style={({ isActive }) =>
+              isActive
+                ? {
+                    background: "linear-gradient(135deg, rgba(99,102,241,0.2), rgba(67,56,202,0.15))",
+                    color: "var(--color-accent-400)",
+                    borderLeft: "2px solid var(--color-accent-500)",
+                  }
+                : {
+                    color: "var(--color-ink-muted)",
+                    borderLeft: "2px solid transparent",
+                  }
+            }
+          >
+            <UserCog className="h-4 w-4" />
+            Employees
+          </NavLink>
+        )}
       </nav>
 
       {/* Settings */}

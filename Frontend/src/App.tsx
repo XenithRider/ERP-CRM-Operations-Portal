@@ -10,6 +10,7 @@ import { Inventory } from "@/pages/Inventory";
 import { Invoices } from "@/pages/Invoices";
 import { Reports } from "@/pages/Reports";
 import { Settings } from "@/pages/Settings";
+import { Employees } from "@/pages/Employees";
 import { Login } from "@/pages/Login";
 import { NotFound } from "@/pages/NotFound";
 
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/employees" element={<Employees />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

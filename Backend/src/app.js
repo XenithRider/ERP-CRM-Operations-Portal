@@ -6,6 +6,7 @@ const customerRoutes = require('./modules/customers/customer.routes');
 const productRoutes = require('./modules/products/product.routes');
 const inventoryRoutes = require('./modules/inventory/inventory.routes');
 const challanRoutes = require('./modules/challans/challan.routes');
+const userRoutes = require('./modules/users/user.routes');
 const { notFoundHandler, errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
@@ -29,6 +30,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/inventory', inventoryRoutes);
