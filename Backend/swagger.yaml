@@ -1,0 +1,251 @@
+openapi: 3.0.0
+info:
+  title: Mini ERP + CRM API
+  description: API documentation for the Mini ERP + CRM Operations Portal
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000/api
+    description: Local development server
+  - url: https://erp-crm-operations-portal-nghh.onrender.com/api
+    description: Production server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+security:
+  - bearerAuth: []
+paths:
+  /auth/login:
+    post:
+      summary: Login user
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Successful login
+  /auth/me:
+    get:
+      summary: Get current user
+      tags: [Auth]
+      responses:
+        '200':
+          description: User profile
+  /customers:
+    get:
+      summary: List all customers
+      tags: [Customers]
+      responses:
+        '200':
+          description: Array of customers
+    post:
+      summary: Create a new customer
+      tags: [Customers]
+      responses:
+        '201':
+          description: Customer created
+  /customers/{id}:
+    get:
+      summary: Get customer details
+      tags: [Customers]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Customer details
+    put:
+      summary: Update a customer
+      tags: [Customers]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Customer updated
+  /customers/{id}/follow-ups:
+    post:
+      summary: Add a follow-up to a customer
+      tags: [Customers]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Follow-up added
+  /products:
+    get:
+      summary: List all products
+      tags: [Products]
+      responses:
+        '200':
+          description: Array of products
+    post:
+      summary: Create a new product
+      tags: [Products]
+      responses:
+        '201':
+          description: Product created
+  /products/{id}:
+    get:
+      summary: Get product details
+      tags: [Products]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product details
+    put:
+      summary: Update a product
+      tags: [Products]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product updated
+  /products/{id}/image:
+    post:
+      summary: Upload product image
+      tags: [Products]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Image uploaded
+  /inventory/movements:
+    get:
+      summary: List inventory movements
+      tags: [Inventory]
+      responses:
+        '200':
+          description: Array of movements
+    post:
+      summary: Record stock movement (IN/OUT)
+      tags: [Inventory]
+      responses:
+        '201':
+          description: Movement recorded
+  /challans:
+    get:
+      summary: List all challans
+      tags: [Challans]
+      responses:
+        '200':
+          description: Array of challans
+    post:
+      summary: Create a new challan
+      tags: [Challans]
+      responses:
+        '201':
+          description: Challan created
+  /challans/{id}:
+    get:
+      summary: Get challan details
+      tags: [Challans]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Challan details
+    put:
+      summary: Update a challan
+      tags: [Challans]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Challan updated
+  /challans/{id}/confirm:
+    post:
+      summary: Confirm a challan
+      tags: [Challans]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Challan confirmed
+  /challans/{id}/cancel:
+    post:
+      summary: Cancel a challan
+      tags: [Challans]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Challan cancelled
+  /challans/{id}/invoice:
+    get:
+      summary: Download challan invoice PDF
+      tags: [Challans]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: PDF file stream
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary

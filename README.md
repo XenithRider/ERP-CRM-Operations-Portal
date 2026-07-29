@@ -2,6 +2,9 @@
 
 A full-stack, production-ready ERP and CRM application designed for modern operations management. This portal provides seamless control over inventory, stock movements, customer relationships (leads and accounts), and order fulfillment through automated PDF challan generation.
 
+**Live Frontend Demo:** [https://erp-crm-operations-portal-rg4xa02nk-xenithriders-projects.vercel.app/](https://erp-crm-operations-portal-rg4xa02nk-xenithriders-projects.vercel.app/)  
+**Live Backend API:** [https://erp-crm-operations-portal-nghh.onrender.com](https://erp-crm-operations-portal-nghh.onrender.com)
+
 ## 🚀 Features
 
 - **Modern Glassmorphism UI:** A premium, fully responsive React interface with interactive components and dark-mode styling.
@@ -88,6 +91,11 @@ FundsRoom-Assignment/
    npm run dev
    ```
    *(The server will start on `http://localhost:5000`)*
+
+6. **View API Documentation:** Once the server is running, you can view the fully interactive Swagger API documentation by navigating to:
+   ```
+   http://localhost:5000/api-docs
+   ```
 
 ### 2. Frontend Setup
 
