@@ -4,9 +4,7 @@
 -- Demo login password for ALL seeded users: Password123!
 -- (bcrypt hash below corresponds to this password)
 
-USE mini_erp_crm;
-
--- ---------------------------------------------------------------------
+---- ---------------------------------------------------------------------
 -- Demo users (one per role)
 -- ---------------------------------------------------------------------
 INSERT INTO users (name, email, password_hash, role) VALUES

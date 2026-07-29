@@ -1,12 +1,6 @@
 -- Mini ERP + CRM Operations Portal
 -- Database schema (MySQL 8+)
 
-CREATE DATABASE IF NOT EXISTS mini_erp_crm
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE mini_erp_crm;
-
 -- ---------------------------------------------------------------------
 -- users
 -- ---------------------------------------------------------------------
