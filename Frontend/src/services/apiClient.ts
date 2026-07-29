@@ -90,9 +90,9 @@ export { ApiError };
 // already in place in each service file below.
 export async function withMockFallback<T>(
   live: () => Promise<T>,
-  mock: () => T | Promise<T>
+  _mock: () => T | Promise<T>
 ): Promise<T> {
-  // Mock mode is permanently turned off as requested.
+  // Mock mode is permanently turned off.
   // We strictly call the live backend and let errors propagate naturally.
   return await live();
 }

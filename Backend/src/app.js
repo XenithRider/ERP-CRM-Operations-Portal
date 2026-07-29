@@ -18,9 +18,29 @@ const swaggerDocument = YAML.load(path.join(__dirname, '../swagger.yaml'));
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+const ALLOWED_ORIGINS = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+  : [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'https://erp-crm-operations-portal-rg4xa02nk-xenithriders-projects.vercel.app',
+    ];
+
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173'
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. Postman, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      // Allow any *.vercel.app deployment and all configured origins
+      if (
+        ALLOWED_ORIGINS.includes(origin) ||
+        /\.vercel\.app$/.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      callback(new Error(`CORS: origin '${origin}' not allowed`));
+    },
+    credentials: true,
   })
 );
 app.use(express.json());
