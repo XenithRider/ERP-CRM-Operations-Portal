@@ -51,4 +51,11 @@ router.post(
   asyncHandler(challanController.cancel)
 );
 
+router.get(
+  '/:id/invoice',
+  authenticate,
+  allowRoles('ADMIN', 'SALES', 'ACCOUNTS'),
+  asyncHandler(challanController.downloadInvoice)
+);
+
 module.exports = router;

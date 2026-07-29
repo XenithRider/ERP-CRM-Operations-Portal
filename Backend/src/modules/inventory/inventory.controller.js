@@ -1,5 +1,6 @@
 const pool = require('../../config/db');
 const ApiError = require('../../utils/api-error');
+const { sendSuccess } = require('../../utils/api-response');
 const {
   requireField,
   requireEnum,
@@ -49,8 +50,8 @@ async function listMovements(req, res) {
   );
   const total = countRows[0].total;
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Stock movements fetched successfully',
     data: rows,
     pagination: {
       page,
@@ -125,8 +126,9 @@ async function createMovement(req, res) {
       [movementResult.insertId]
     );
 
-    res.status(201).json({
-      success: true,
+    sendSuccess(res, {
+      statusCode: 201,
+      message: 'Stock movement recorded successfully',
       data: {
         movement: movementRows[0],
         currentStock: newStock

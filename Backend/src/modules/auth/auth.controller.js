@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('../../config/db');
 const ApiError = require('../../utils/api-error');
 const { requireField } = require('../../utils/validation');
+const { sendSuccess } = require('../../utils/api-response');
 
 /**
  * POST /api/auth/login
@@ -43,12 +44,9 @@ async function login(req, res) {
     expiresIn: process.env.JWT_EXPIRES_IN || '1d'
   });
 
-  res.status(200).json({
-    success: true,
-    data: {
-      token,
-      user: tokenPayload
-    }
+  sendSuccess(res, {
+    message: 'Login successful',
+    data: { token, user: tokenPayload }
   });
 }
 
@@ -58,10 +56,7 @@ async function login(req, res) {
  * Useful for the frontend to validate a stored token on app load.
  */
 async function me(req, res) {
-  res.status(200).json({
-    success: true,
-    data: req.user
-  });
+  sendSuccess(res, { message: 'Current user fetched', data: req.user });
 }
 
 module.exports = { login, me };

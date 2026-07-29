@@ -1,5 +1,7 @@
 const pool = require('../../config/db');
 const ApiError = require('../../utils/api-error');
+const { sendSuccess } = require('../../utils/api-response');
+const { uploadProductImage } = require('../../utils/image-upload');
 const {
   requireField,
   toPositiveInt,
@@ -25,7 +27,9 @@ async function create(req, res) {
 
   const [existing] = await pool.execute('SELECT id FROM products WHERE sku = ?', [sku]);
   if (existing[0]) {
-    throw new ApiError(409, `A product with SKU '${sku}' already exists`);
+    throw new ApiError(409, `A product with SKU '${sku}' already exists`, undefined, [
+      { field: 'sku', message: 'This SKU is already in use by another product' }
+    ]);
   }
 
   const [result] = await pool.execute(
@@ -44,8 +48,9 @@ async function create(req, res) {
 
   const product = await getProductById(result.insertId);
 
-  res.status(201).json({
-    success: true,
+  sendSuccess(res, {
+    statusCode: 201,
+    message: 'Product created successfully',
     data: product
   });
 }
@@ -90,8 +95,8 @@ async function list(req, res) {
   );
   const total = countRows[0].total;
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Products fetched successfully',
     data: rows,
     pagination: {
       page,
@@ -109,8 +114,8 @@ async function getOne(req, res) {
   const id = toPositiveInt(req.params.id, 'id');
   const product = await getProductById(id);
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Product fetched successfully',
     data: product
   });
 }
@@ -137,7 +142,9 @@ async function update(req, res) {
     [sku, id]
   );
   if (existing[0]) {
-    throw new ApiError(409, `A product with SKU '${sku}' already exists`);
+    throw new ApiError(409, `A product with SKU '${sku}' already exists`, undefined, [
+      { field: 'sku', message: 'This SKU is already in use by another product' }
+    ]);
   }
 
   await pool.execute(
@@ -149,8 +156,8 @@ async function update(req, res) {
 
   const product = await getProductById(id);
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Product updated successfully',
     data: product
   });
 }
@@ -167,4 +174,26 @@ async function getProductById(id) {
   return product;
 }
 
-module.exports = { create, list, getOne, update, getProductById };
+/**
+ * POST /api/products/:id/image
+ * Uploads a product image to AWS S3 and stores the resulting URL on the
+ * product. Returns 503 with a clear message if AWS S3 is not configured
+ * for this environment (see .env.example).
+ */
+async function uploadImage(req, res) {
+  const id = toPositiveInt(req.params.id, 'id');
+  await getProductById(id);
+
+  const imageUrl = await uploadProductImage(req.file, id);
+
+  await pool.execute('UPDATE products SET image_url = ? WHERE id = ?', [imageUrl, id]);
+
+  const product = await getProductById(id);
+
+  sendSuccess(res, {
+    message: 'Product image uploaded successfully',
+    data: product
+  });
+}
+
+module.exports = { create, list, getOne, update, uploadImage, getProductById };

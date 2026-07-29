@@ -1,5 +1,7 @@
 const pool = require('../../config/db');
 const ApiError = require('../../utils/api-error');
+const { sendSuccess } = require('../../utils/api-response');
+const { generateInvoicePdf } = require('../../utils/invoice-pdf');
 const {
   requireField,
   requireEnum,
@@ -89,8 +91,9 @@ async function create(req, res) {
 
     const challan = await getChallanWithItems(challanId);
 
-    res.status(201).json({
-      success: true,
+    sendSuccess(res, {
+      statusCode: 201,
+      message: 'Challan created successfully',
       data: challan
     });
   } catch (error) {
@@ -141,8 +144,8 @@ async function list(req, res) {
   );
   const total = countRows[0].total;
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Challans fetched successfully',
     data: rows,
     pagination: {
       page,
@@ -160,8 +163,8 @@ async function getOne(req, res) {
   const id = toPositiveInt(req.params.id, 'id');
   const challan = await getChallanWithItems(id);
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Challan fetched successfully',
     data: challan
   });
 }
@@ -222,8 +225,8 @@ async function update(req, res) {
 
     const updatedChallan = await getChallanWithItems(id);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
+      message: 'Challan updated successfully',
       data: updatedChallan
     });
   } catch (error) {
@@ -334,8 +337,8 @@ async function confirm(req, res) {
 
     const confirmedChallan = await getChallanWithItems(id);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
+      message: 'Challan confirmed successfully',
       data: confirmedChallan
     });
   } catch (error) {
@@ -375,8 +378,8 @@ async function cancel(req, res) {
 
     const cancelledChallan = await getChallanWithItems(id);
 
-    res.status(200).json({
-      success: true,
+    sendSuccess(res, {
+      message: 'Challan cancelled successfully',
       data: cancelledChallan
     });
   } catch (error) {
@@ -385,6 +388,32 @@ async function cancel(req, res) {
   } finally {
     connection.release();
   }
+}
+
+/**
+ * GET /api/challans/:id/invoice
+ * Generates and streams a PDF invoice for a CONFIRMED challan. Only
+ * confirmed challans have a finalized, stock-backed set of items, so
+ * DRAFT/CANCELLED challans are rejected with 409.
+ */
+async function downloadInvoice(req, res) {
+  const id = toPositiveInt(req.params.id, 'id');
+  const challan = await getChallanWithItems(id);
+
+  if (challan.status !== 'CONFIRMED') {
+    throw new ApiError(
+      409,
+      `Only CONFIRMED challans can be exported as an invoice (current status: ${challan.status})`
+    );
+  }
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader(
+    'Content-Disposition',
+    `attachment; filename="invoice-${challan.challan_number}.pdf"`
+  );
+
+  generateInvoicePdf(challan, res);
 }
 
 /**
@@ -413,17 +442,25 @@ async function fetchProductsByIds(connection, productIds) {
 
 /**
  * Internal helper: inserts challan_items rows, copying product snapshot
- * fields (name, sku, unit price) so historical challan data stays accurate
- * even if the product master record changes later.
+ * fields (name, sku, category, unit price) so historical challan data
+ * stays accurate even if the product master record changes later.
  */
 async function insertChallanItems(connection, challanId, items, productMap) {
   for (const item of items) {
     const product = productMap.get(item.productId);
     await connection.execute(
       `INSERT INTO challan_items
-        (challan_id, product_id, product_name_snapshot, sku_snapshot, unit_price_snapshot, quantity)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [challanId, product.id, product.name, product.sku, product.unit_price, item.quantity]
+        (challan_id, product_id, product_name_snapshot, sku_snapshot, category_snapshot, unit_price_snapshot, quantity)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        challanId,
+        product.id,
+        product.name,
+        product.sku,
+        product.category || null,
+        product.unit_price,
+        item.quantity
+      ]
     );
   }
 }
@@ -453,4 +490,4 @@ async function getChallanWithItems(id) {
   return { ...challan, items };
 }
 
-module.exports = { create, list, getOne, update, confirm, cancel };
+module.exports = { create, list, getOne, update, confirm, cancel, downloadInvoice };

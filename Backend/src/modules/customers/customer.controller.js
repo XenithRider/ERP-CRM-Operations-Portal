@@ -1,8 +1,11 @@
 const pool = require('../../config/db');
 const ApiError = require('../../utils/api-error');
+const { sendSuccess } = require('../../utils/api-response');
 const {
   requireField,
   requireEnum,
+  requireValidEmail,
+  requireValidMobile,
   toPositiveInt,
   parsePagination,
   toOptionalDate
@@ -12,10 +15,10 @@ const CUSTOMER_TYPES = ['RETAIL', 'WHOLESALE', 'DISTRIBUTOR'];
 const CUSTOMER_STATUSES = ['LEAD', 'ACTIVE', 'INACTIVE'];
 
 /**
- * POST /api/customers
- * Creates a new customer.
+ * Validates and normalizes the shared customer payload used by
+ * create/update. Throws ApiError(400) on any bad input.
  */
-async function create(req, res) {
+function parseCustomerPayload(body) {
   const {
     name,
     mobile,
@@ -27,10 +30,15 @@ async function create(req, res) {
     status,
     followUpDate,
     notes
-  } = req.body;
+  } = body;
 
   requireField(name, 'name');
   requireField(mobile, 'mobile');
+  requireValidMobile(mobile, 'mobile');
+
+  if (email) {
+    requireValidEmail(email, 'email');
+  }
 
   const resolvedType = customerType || 'RETAIL';
   const resolvedStatus = status || 'LEAD';
@@ -38,29 +46,83 @@ async function create(req, res) {
   requireEnum(resolvedStatus, CUSTOMER_STATUSES, 'status');
   const resolvedFollowUpDate = toOptionalDate(followUpDate, 'followUpDate');
 
-  const [result] = await pool.execute(
-    `INSERT INTO customers
-      (name, mobile, email, business_name, gst_number, customer_type, address, status, follow_up_date, notes, created_by)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      name,
-      mobile,
-      email || null,
-      businessName || null,
-      gstNumber || null,
-      resolvedType,
-      address || null,
-      resolvedStatus,
-      resolvedFollowUpDate,
-      notes || null,
-      req.user.id
-    ]
+  return {
+    name,
+    mobile,
+    email: email || null,
+    businessName: businessName || null,
+    gstNumber: gstNumber || null,
+    customerType: resolvedType,
+    address: address || null,
+    status: resolvedStatus,
+    followUpDate: resolvedFollowUpDate,
+    notes: notes || null
+  };
+}
+
+/**
+ * Throws a 409 ApiError if another customer already uses this mobile
+ * number. `excludeId` lets updates ignore the customer's own row.
+ */
+async function assertMobileNotTaken(mobile, excludeId) {
+  const [rows] = await pool.execute(
+    'SELECT id FROM customers WHERE mobile = ? AND id != ?',
+    [mobile, excludeId || 0]
   );
+  if (rows[0]) {
+    throw new ApiError(409, 'A customer with this mobile number already exists', undefined, [
+      { field: 'mobile', message: 'This mobile number is already registered to another customer' }
+    ]);
+  }
+}
 
-  const customer = await getCustomerById(result.insertId);
+/**
+ * POST /api/customers
+ * Creates a new customer. Rejects duplicate mobile numbers with a clear
+ * 409 error (also enforced at the database level by a UNIQUE constraint).
+ */
+async function create(req, res) {
+  const payload = parseCustomerPayload(req.body);
+  await assertMobileNotTaken(payload.mobile);
 
-  res.status(201).json({
-    success: true,
+  let insertId;
+  try {
+    const [result] = await pool.execute(
+      `INSERT INTO customers
+        (name, mobile, email, business_name, gst_number, customer_type, address, status, follow_up_date, notes, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        payload.name,
+        payload.mobile,
+        payload.email,
+        payload.businessName,
+        payload.gstNumber,
+        payload.customerType,
+        payload.address,
+        payload.status,
+        payload.followUpDate,
+        payload.notes,
+        req.user.id
+      ]
+    );
+    insertId = result.insertId;
+  } catch (error) {
+    // Safety net: a concurrent request could slip past the pre-check above;
+    // the DB-level UNIQUE constraint on `mobile` catches that race and we
+    // still return a clean, predictable error instead of a raw SQL error.
+    if (error.code === 'ER_DUP_ENTRY') {
+      throw new ApiError(409, 'A customer with this mobile number already exists', undefined, [
+        { field: 'mobile', message: 'This mobile number is already registered to another customer' }
+      ]);
+    }
+    throw error;
+  }
+
+  const customer = await getCustomerById(insertId);
+
+  sendSuccess(res, {
+    statusCode: 201,
+    message: 'Customer created successfully',
     data: customer
   });
 }
@@ -108,8 +170,8 @@ async function list(req, res) {
   );
   const total = countRows[0].total;
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Customers fetched successfully',
     data: rows,
     pagination: {
       page,
@@ -136,66 +198,57 @@ async function getOne(req, res) {
     [id]
   );
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Customer fetched successfully',
     data: { ...customer, followUps }
   });
 }
 
 /**
  * PUT /api/customers/:id
- * Updates an existing customer's details.
+ * Updates an existing customer's details. Rejects a mobile number that
+ * belongs to a different customer with a 409 error.
  */
 async function update(req, res) {
   const id = toPositiveInt(req.params.id, 'id');
   await getCustomerById(id); // ensures the customer exists
 
-  const {
-    name,
-    mobile,
-    email,
-    businessName,
-    gstNumber,
-    customerType,
-    address,
-    status,
-    followUpDate,
-    notes
-  } = req.body;
+  const payload = parseCustomerPayload(req.body);
+  await assertMobileNotTaken(payload.mobile, id);
 
-  requireField(name, 'name');
-  requireField(mobile, 'mobile');
-
-  const resolvedType = customerType || 'RETAIL';
-  const resolvedStatus = status || 'LEAD';
-  requireEnum(resolvedType, CUSTOMER_TYPES, 'customerType');
-  requireEnum(resolvedStatus, CUSTOMER_STATUSES, 'status');
-  const resolvedFollowUpDate = toOptionalDate(followUpDate, 'followUpDate');
-
-  await pool.execute(
-    `UPDATE customers SET
-      name = ?, mobile = ?, email = ?, business_name = ?, gst_number = ?,
-      customer_type = ?, address = ?, status = ?, follow_up_date = ?, notes = ?
-     WHERE id = ?`,
-    [
-      name,
-      mobile,
-      email || null,
-      businessName || null,
-      gstNumber || null,
-      resolvedType,
-      address || null,
-      resolvedStatus,
-      resolvedFollowUpDate,
-      notes || null,
-      id
-    ]
-  );
+  try {
+    await pool.execute(
+      `UPDATE customers SET
+        name = ?, mobile = ?, email = ?, business_name = ?, gst_number = ?,
+        customer_type = ?, address = ?, status = ?, follow_up_date = ?, notes = ?
+       WHERE id = ?`,
+      [
+        payload.name,
+        payload.mobile,
+        payload.email,
+        payload.businessName,
+        payload.gstNumber,
+        payload.customerType,
+        payload.address,
+        payload.status,
+        payload.followUpDate,
+        payload.notes,
+        id
+      ]
+    );
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      throw new ApiError(409, 'A customer with this mobile number already exists', undefined, [
+        { field: 'mobile', message: 'This mobile number is already registered to another customer' }
+      ]);
+    }
+    throw error;
+  }
 
   const customer = await getCustomerById(id);
 
-  res.status(200).json({
-    success: true,
+  sendSuccess(res, {
+    message: 'Customer updated successfully',
     data: customer
   });
 }
@@ -231,8 +284,9 @@ async function addFollowUp(req, res) {
     [result.insertId]
   );
 
-  res.status(201).json({
-    success: true,
+  sendSuccess(res, {
+    statusCode: 201,
+    message: 'Follow-up added successfully',
     data: rows[0]
   });
 }
