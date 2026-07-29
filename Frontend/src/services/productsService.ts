@@ -25,4 +25,11 @@ export const productsService = {
     const res = await apiClient.put<ApiResponse<Product>>(`/products/${id}`, payload);
     return res.data;
   },
+
+  uploadImage: async (id: string | number, file: File) => {
+    const formData = new FormData();
+    formData.append("image", file);
+    const res = await apiClient.post<ApiResponse<Product>>(`/products/${id}/image`, formData);
+    return res.data;
+  },
 };

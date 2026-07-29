@@ -30,7 +30,7 @@ interface MovementModalProps {
 function MovementModal({ open, onClose, products, onDone }: MovementModalProps) {
   const [productId, setProductId] = useState<string>("");
   const [movementType, setMovementType] = useState<MovementType>("IN");
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState("1");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +43,7 @@ function MovementModal({ open, onClose, products, onDone }: MovementModalProps) 
     try {
       const payload: CreateMovementPayload = {
         productId: Number(productId),
-        quantity,
+        quantity: Number(quantity) || 1,
         movementType,
         reason: reason || undefined,
       };
@@ -124,7 +124,7 @@ function MovementModal({ open, onClose, products, onDone }: MovementModalProps) 
               type="number"
               min={1}
               value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
+              onChange={(e) => setQuantity(e.target.value)}
               className="modal-input"
               required
             />
@@ -167,13 +167,24 @@ interface AddProductModalProps {
 }
 
 function AddProductModal({ open, onClose, onCreated }: AddProductModalProps) {
-  const [form, setForm] = useState<CreateProductPayload>({
-    name: "", sku: "", category: "", unit_price: 0, current_stock: 0, minimum_stock: 0, warehouse_location: "",
+  const [form, setForm] = useState({
+    name: "", sku: "", category: "", unit_price: "", current_stock: "", minimum_stock: "", warehouse_location: "",
   });
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function set(key: keyof CreateProductPayload, value: string | number) {
+  // Reset state on open
+  useEffect(() => {
+    if (open) {
+      setForm({ name: "", sku: "", category: "", unit_price: "", current_stock: "", minimum_stock: "", warehouse_location: "" });
+      setImageFile(null);
+      setError(null);
+      setLoading(false);
+    }
+  }, [open]);
+
+  function set(key: string, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -181,7 +192,19 @@ function AddProductModal({ open, onClose, onCreated }: AddProductModalProps) {
     e.preventDefault();
     setLoading(true); setError(null);
     try {
-      const product = await productsService.create(form);
+      const payload: CreateProductPayload = {
+        name: form.name,
+        sku: form.sku,
+        category: form.category || undefined,
+        unitPrice: Number(form.unit_price) || 0,
+        currentStock: Number(form.current_stock) || 0,
+        minimumStock: Number(form.minimum_stock) || 0,
+        warehouseLocation: form.warehouse_location || undefined,
+      };
+      let product = await productsService.create(payload);
+      if (imageFile) {
+        product = await productsService.uploadImage(product.id, imageFile);
+      }
       onCreated(product);
       onClose();
     } catch (err: unknown) {
@@ -198,7 +221,7 @@ function AddProductModal({ open, onClose, onCreated }: AddProductModalProps) {
       <div className="glass slide-in w-full max-w-lg rounded-2xl inner-border" style={{ boxShadow: "0 24px 64px rgba(0,0,0,0.7)" }}>
         <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: "var(--color-border)" }}>
           <h2 className="font-[var(--font-display)] text-base font-semibold" style={{ color: "var(--color-ink)" }}>New Product</h2>
-          <button onClick={onClose} className="rounded-lg p-1.5" style={{ color: "var(--color-ink-muted)" }}><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5" style={{ color: "var(--color-ink-muted)" }}><X className="h-4 w-4" /></button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 p-6">
           <div className="grid grid-cols-2 gap-4">
@@ -212,24 +235,28 @@ function AddProductModal({ open, onClose, onCreated }: AddProductModalProps) {
             </div>
             <div>
               <label className="modal-label">Category</label>
-              <input className="modal-input" value={form.category ?? ""} onChange={(e) => set("category", e.target.value)} placeholder="Hardware" />
+              <input className="modal-input" value={form.category} onChange={(e) => set("category", e.target.value)} placeholder="Hardware" />
             </div>
             <div>
               <label className="modal-label">Unit Price (₹) *</label>
-              <input className="modal-input" type="number" min={0} step="0.01" value={form.unit_price} onChange={(e) => set("unit_price", Number(e.target.value))} required />
+              <input className="modal-input" type="number" min={0} step="0.01" value={form.unit_price} onChange={(e) => set("unit_price", e.target.value)} required placeholder="0.00" />
             </div>
             <div>
               <label className="modal-label">Initial Stock</label>
-              <input className="modal-input" type="number" min={0} value={form.current_stock ?? 0} onChange={(e) => set("current_stock", Number(e.target.value))} />
+              <input className="modal-input" type="number" min={0} value={form.current_stock} onChange={(e) => set("current_stock", e.target.value)} placeholder="0" />
             </div>
             <div>
               <label className="modal-label">Minimum Stock</label>
-              <input className="modal-input" type="number" min={0} value={form.minimum_stock ?? 0} onChange={(e) => set("minimum_stock", Number(e.target.value))} />
+              <input className="modal-input" type="number" min={0} value={form.minimum_stock} onChange={(e) => set("minimum_stock", e.target.value)} placeholder="0" />
             </div>
           </div>
           <div>
             <label className="modal-label">Warehouse Location</label>
-            <input className="modal-input" value={form.warehouse_location ?? ""} onChange={(e) => set("warehouse_location", e.target.value)} placeholder="Warehouse A - Rack 1" />
+            <input className="modal-input" value={form.warehouse_location} onChange={(e) => set("warehouse_location", e.target.value)} placeholder="Warehouse A - Rack 1" />
+          </div>
+          <div>
+            <label className="modal-label">Product Image</label>
+            <input type="file" accept="image/*" className="modal-input" onChange={(e) => setImageFile(e.target.files?.[0] || null)} style={{ padding: "0.4rem 0.875rem" }} />
           </div>
           {error && (
             <div className="flex items-center gap-2 rounded-xl border px-4 py-3" style={{ background: "var(--color-danger-100)", borderColor: "rgba(244,63,94,0.3)" }}>
@@ -330,7 +357,7 @@ export function Inventory() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
-                {["SKU", "Product", "Category", "Unit Price", "Stock", "Min. Stock", "Location", "Updated"].map((h) => (
+                {["Image", "SKU", "Product", "Category", "Unit Price", "Stock", "Min. Stock", "Location", "Updated"].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--color-ink-muted)" }}>{h}</th>
                 ))}
               </tr>
@@ -344,6 +371,15 @@ export function Inventory() {
                   onMouseEnter={(e) => (e.currentTarget.style.background = "var(--color-glass)")}
                   onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                 >
+                  <td className="px-5 py-3.5">
+                    {p.image_url ? (
+                      <img src={p.image_url} alt={p.name} className="h-10 w-10 rounded-lg object-cover border" style={{ borderColor: "var(--color-border)" }} />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg" style={{ background: "var(--color-surface-sunken)", border: "1px dashed var(--color-border)" }}>
+                        <span className="text-[9px] font-medium uppercase tracking-widest" style={{ color: "var(--color-ink-faint)" }}>Img</span>
+                      </div>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className="num text-xs font-medium" style={{ color: "var(--color-accent-400)" }}>{p.sku}</span>
                   </td>

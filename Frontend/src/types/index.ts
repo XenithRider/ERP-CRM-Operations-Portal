@@ -75,10 +75,10 @@ export interface CreateProductPayload {
   name: string;
   sku: string;
   category?: string;
-  unit_price: number;
-  current_stock?: number;
-  minimum_stock?: number;
-  warehouse_location?: string;
+  unitPrice: number;
+  currentStock?: number;
+  minimumStock?: number;
+  warehouseLocation?: string;
 }
 
 // ---- Inventory / Stock Movements ----
